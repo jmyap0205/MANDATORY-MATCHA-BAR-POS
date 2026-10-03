@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a73e8">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mandatory MATCHA BAR - POS & Sales System</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,600;1,700&display=swap" rel="stylesheet">
+</head>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+</script>
+<body>
+
+  <!-- Mandatory Signature Checker Trim Border -->
+  <div class="matcha-checker-strip"></div>
+
+  <!-- ==========================================================================
+       APP HEADER & TOP NAVIGATION
+       ========================================================================== -->
+  <header class="app-header">
+    <div class="brand-container">
+      <div class="brand-mascot-logo" title="Mandatory Matcha Mascot">🐈‍⬛</div>
+      <div class="brand-title-wrap">
+        <div class="brand-title" id="headerStoreName">Mandatory</div>
+        <div class="brand-subtitle">MATCHA BAR</div>
+      </div>
+    </div>
+
+    <nav class="nav-tabs-container">
+      <button class="nav-tab-btn active" data-tab="register">
+        <span>🍵</span> Register
+      </button>
+      <button class="nav-tab-btn" data-tab="reports">
+        <span>📊</span> Sales Reports & Charts
+      </button>
+      <button class="nav-tab-btn" data-tab="orders">
+        <span>🧾</span> Orders & History
+      </button>
+      <button class="nav-tab-btn" data-tab="products">
+        <span>📦</span> Menu & Inventory
+      </button>
+      <button class="nav-tab-btn" data-tab="settings">
+        <span>⚙️</span> Settings
+      </button>
+    </nav>
+
+    <div class="header-right">
+      <div class="live-clock-badge">
+        <span class="live-time" id="liveTimeDisplay">00:00:00</span>
+        <span class="live-date" id="liveDateDisplay">Loading date...</span>
+      </div>
+      <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Light/Dark Theme">🍵</button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       MAIN WORKSPACE CONTAINER
+       ========================================================================== -->
+  <main class="main-view-container">
+
+    <!-- 1. REGISTER / CHECKOUT TERMINAL SECTION -->
+    <section id="view-register" class="view-section active">
+      <div class="pos-register-layout">
+        
+        <!-- Left: Product Catalog & Category Filter -->
+        <div class="pos-catalog-panel">
+          <div class="catalog-search-bar">
+            <div class="search-input-wrapper">
+              <span class="search-icon-inside">🔍</span>
+              <input type="text" id="productSearchInput" placeholder="Search menu (e.g. Level 2, Gelato, Cookie, Brownie)..." autocomplete="off">
+            </div>
+          </div>
+
+          <div class="category-pills-bar" id="categoryPillsContainer">
+            <!-- Dynamic Category Pills -->
+          </div>
+
+          <div class="products-grid-scroll">
+            <div class="products-grid" id="productsGrid">
+              <!-- Dynamic Product Cards -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Real-time Cart & Checkout Action Panel -->
+        <div class="pos-cart-panel">
+          <div class="cart-header">
+            <div class="cart-title-info">
+              <span class="cart-title">Current Order</span>
+              <span class="cart-ticket-tag" id="cartItemsCountDisplay">0 items</span>
+            </div>
+            <div class="cart-header-actions">
+              <button class="cart-icon-btn" id="viewParkedBtn" title="View Held / Parked Orders">
+                📌 <span id="parkedBadge" style="display:none; font-size: 0.7rem; background: var(--primary); color: white; padding: 1px 4px; border-radius: 10px;">0</span>
+              </button>
+              <button class="cart-icon-btn" id="clearCartBtn" title="Clear Cart">🗑️</button>
+            </div>
+          </div>
+
+          <div class="cart-items-container" id="cartItemsContainer">
+            <!-- Dynamic Cart Items -->
+          </div>
+
+          <div class="cart-summary-section">
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span id="cartSubtotalDisplay" style="font-family: var(--font-mono); font-weight: 700;">₱0.00</span>
+            </div>
+            <div class="summary-row" id="cartDiscountSummaryRow" style="display: none; color: var(--warning);">
+              <span id="cartDiscountLabelDisplay">Discount:</span>
+              <span id="cartDiscountDisplay" style="font-family: var(--font-mono); font-weight: 700;">-₱0.00</span>
+            </div>
+            <div class="summary-row" id="cartTaxSummaryRow">
+              <span id="cartTaxLabelDisplay">VAT (12%):</span>
+              <span id="cartTaxDisplay" style="font-family: var(--font-mono); font-weight: 700;">₱0.00</span>
+            </div>
+            <div class="summary-row grand-total">
+              <span>Total:</span>
+              <span class="grand-total-amount" id="cartGrandTotalDisplay">₱0.00</span>
+            </div>
+
+            <div class="cart-actions-grid">
+              <button class="btn-park-order" id="parkOrderBtn" type="button">
+                <span>⏸</span> Hold
+              </button>
+              <button class="btn-checkout-primary" id="checkoutBtn" type="button" disabled>
+                <span>🍵</span> Pay / Tender
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. SALES REPORTS & INTERACTIVE GRAPHS SECTION -->
+    <section id="view-reports" class="view-section">
+      <div class="reports-layout">
+        
+        <!-- Header Controls -->
+        <div class="reports-header-bar">
+          <div class="report-scope-toggle">
+            <button class="scope-btn active" data-scope="daily">📅 Daily Report</button>
+            <button class="scope-btn" data-scope="monthly">🗓️ Monthly Report</button>
+          </div>
+
+          <div class="report-filters-group">
+            <div id="dailyDateFilterBox" style="display: flex; align-items: center; gap: 0.5rem;">
+              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Select Day:</label>
+              <input type="date" id="reportDatePicker" class="date-picker-input">
+            </div>
+
+            <div id="monthlyDateFilterBox" style="display: none; align-items: center; gap: 0.5rem;">
+              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Select Month:</label>
+              <input type="month" id="reportMonthPicker" class="month-picker-input">
+            </div>
+
+            <button class="btn-action-outline" id="exportSalesCsvBtn" title="Export to CSV">
+              <span>📥</span> Export CSV
+            </button>
+            <button class="btn-action-outline" id="printReportBtn" title="Print Sales Summary">
+              <span>🖨️</span> Print Report
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Metric Cards -->
+        <div class="kpi-cards-grid">
+          <div class="kpi-card kpi-green">
+            <span class="kpi-label">Gross Revenue</span>
+            <span class="kpi-val" id="kpiGrossSales">₱0.00</span>
+            <span class="kpi-sub">Total sales before deductions</span>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-label">Net Sales</span>
+            <span class="kpi-val" id="kpiNetSales">₱0.00</span>
+            <span class="kpi-sub">Including taxes & adjustments</span>
+          </div>
+
+          <div class="kpi-card kpi-purple">
+            <span class="kpi-label">Transactions</span>
+            <span class="kpi-val" id="kpiTxCount">0</span>
+            <span class="kpi-sub">Avg Ticket: <strong id="kpiAvgOrderValue" style="color: var(--text-primary);">₱0.00</strong></span>
+          </div>
+
+          <div class="kpi-card kpi-amber">
+            <span class="kpi-label">Estimated Gross Profit</span>
+            <span class="kpi-val" id="kpiGrossProfit">₱0.00</span>
+            <span class="kpi-sub" id="kpiProfitMargin">0.0% Margin</span>
+          </div>
+        </div>
+
+        <!-- Charts Grid Row -->
+        <div class="analytics-grid-two">
+          <!-- Flow Chart -->
+          <div class="chart-card-box">
+            <div class="chart-card-header">
+              <div>
+                <div class="chart-title" id="flowChartTitleText">Hourly Sales Flow (Rush Hours)</div>
+                <div class="chart-subtitle" id="flowChartSubtitleText">Visual flow of customer orders throughout the day</div>
+              </div>
+            </div>
+            <div class="chart-render-target" id="primaryFlowChartContainer">
+              <!-- Rendered SVG Chart -->
+            </div>
+          </div>
+
+          <!-- Payment Breakdown & Totals Donut -->
+          <div class="chart-card-box">
+            <div class="chart-card-header">
+              <div>
+                <div class="chart-title">Payment Methods Breakdown</div>
+                <div class="chart-subtitle">GCash, Maya, UnionBank, Cash & Card Totals</div>
+              </div>
+            </div>
+            <div class="chart-render-target" id="paymentDonutChartContainer">
+              <!-- Rendered Donut & Breakdown Table -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Selling Items Table -->
+        <div class="chart-card-box">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-title">Top Selling Matcha & Pastries</div>
+              <div class="chart-subtitle">Ranked by revenue contribution</div>
+            </div>
+          </div>
+          <table class="top-items-table">
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>SKU</th>
+                <th>Units Sold</th>
+                <th>Revenue</th>
+              </tr>
+            </thead>
+            <tbody id="topItemsTableBody">
+              <!-- Dynamic Top Products -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. ORDERS & SALES HISTORY SECTION (EDITABLE) -->
+    <section id="view-orders" class="view-section">
+      <div class="orders-layout">
+        
+        <div class="orders-filter-bar">
+          <div class="search-input-wrapper" style="max-width: 320px;">
+            <span class="search-icon-inside">🔍</span>
+            <input type="text" id="orderSearchInput" placeholder="Search Order ID, guest, notes...">
+          </div>
+
+          <select id="orderStatusFilter" class="form-control" style="width: auto;">
+            <option value="all">All Statuses</option>
+            <option value="completed">Completed</option>
+            <option value="refunded">Refunded</option>
+            <option value="voided">Voided</option>
+          </select>
+
+          <select id="orderPaymentFilter" class="form-control" style="width: auto;">
+            <option value="all">All Payment Methods</option>
+            <option value="cash">Cash</option>
+            <option value="gcash">GCash</option>
+            <option value="maya">Maya</option>
+            <option value="unionbank">UnionBank</option>
+            <option value="card_credit">Card</option>
+            <option value="owner_comp">👑 Owner's Comp</option>
+          </select>
+        </div>
+
+        <div class="orders-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Date / Time</th>
+                <th>Guest</th>
+                <th>Items Ordered</th>
+                <th>Payment Method</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <!-- Dynamic Order Rows -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 4. PRODUCTS & INVENTORY MANAGEMENT SECTION (EDITABLE) -->
+    <section id="view-products" class="view-section">
+      <div class="products-mgmt-layout">
+        
+        <div class="mgmt-header-bar">
+          <h2>Matcha Menu & Inventory Catalog</h2>
+          <div class="mgmt-actions-group">
+            <button class="btn-action-outline" id="openCategoriesBtn">
+              <span>🏷️</span> Manage Categories
+            </button>
+            <button class="btn-primary" id="openAddProductBtn">
+              <span>+</span> Add Menu Item
+            </button>
+          </div>
+        </div>
+
+        <div class="orders-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Price (₱)</th>
+                <th>Cost (₱)</th>
+                <th>Stock in Hand</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsMgmtTableBody">
+              <!-- Dynamic Products Table Rows -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 5. SETTINGS & STORE CUSTOMIZATION SECTION -->
+    <section id="view-settings" class="view-section">
+      <div class="settings-layout">
+        
+        <div class="settings-grid">
+          
+          <!-- Store Profile & Receipt Settings -->
+          <div class="settings-card">
+            <div class="settings-card-title">
+              <span>🍵</span> Store Profile & Receipt Config
+            </div>
+            <form id="storeSettingsForm" style="display: flex; flex-direction: column; gap: 1rem;">
+              <div class="form-group">
+                <label>Business / Store Name</label>
+                <input type="text" id="settingStoreName" class="form-control" required>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label>Store Contact</label>
+                  <input type="text" id="settingStorePhone" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label>Tax Identification # / VAT</label>
+                  <input type="text" id="settingTaxId" class="form-control">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Store Address</label>
+                <input type="text" id="settingStoreAddress" class="form-control">
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label>Currency Symbol</label>
+                  <input type="text" id="settingCurrencySymbol" class="form-control" maxlength="4" required>
+                </div>
+                <div class="form-group">
+                  <label>Sales Tax Rate (%)</label>
+                  <input type="number" step="0.1" id="settingTaxRate" class="form-control" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Receipt Header Note</label>
+                <input type="text" id="settingReceiptHeader" class="form-control">
+              </div>
+
+              <div class="form-group">
+                <label>Receipt Footer Policy Note</label>
+                <input type="text" id="settingReceiptFooter" class="form-control">
+              </div>
+
+              <button type="submit" class="btn-primary" style="margin-top: 0.5rem; align-self: flex-start;">
+                Save Store Settings
+              </button>
+            </form>
+          </div>
+
+          <!-- Payment Methods Management -->
+          <div class="settings-card">
+            <div class="settings-card-title" style="justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>💳</span> Payment Methods & QR Accounts
+              </div>
+              <button class="btn-action-outline" id="openAddPaymentMethodBtn" style="font-size: 0.78rem; padding: 0.3rem 0.6rem;">
+                + Add Method
+              </button>
+            </div>
+            
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
+              Configure your active payment channels (GCash, Maya, UnionBank, Cash, Card, or custom vouchers).
+            </p>
+
+            <div class="payment-methods-list" id="settingsPaymentMethodsList">
+              <!-- Dynamic Payment Method Rows -->
+            </div>
+          </div>
+
+          <!-- Database Backup, Restore & Data Reset -->
+          <div class="settings-card" style="grid-column: 1 / -1;">
+            <div class="settings-card-title">
+              <span>💾</span> Data Portability & Database Backup
+            </div>
+            
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              All your store items, categories, GCash/Maya/UB settings, and sales transactions are automatically saved locally in your browser. You can export complete snapshots or restore them anytime.
+            </p>
+
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+              <button class="btn-primary" id="backupJsonBtn">
+                <span>📥</span> Export Full Database (.json)
+              </button>
+
+              <label class="btn-action-outline" style="cursor: pointer;">
+                <span>📤</span> Import Backup File (.json)
+                <input type="file" id="restoreFileInput" accept=".json" style="display: none;">
+              </label>
+
+              <button class="btn-action-outline" id="resetDemoDataBtn" style="color: var(--warning); border-color: rgba(197, 143, 73, 0.4);">
+                <span>🔄</span> Reset to Mandatory Matcha Bar Menu Data
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       MODALS & DIALOGS
+       ========================================================================== -->
+
+  <!-- FAST CHECKOUT MODAL -->
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Checkout & Payment</div>
+        <button class="modal-close-btn" onclick="app.closeModal('checkoutModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="checkout-total-banner">
+          <div class="checkout-total-label">Total Amount Due</div>
+          <div class="checkout-total-value" id="modalCheckoutTotalDisplay">₱0.00</div>
+        </div>
+
+        <!-- Discounts & Government Privileges (PWD, Senior Citizen, Promos) -->
+        <div class="form-group" style="background: var(--bg-subtle); border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label style="margin: 0; font-weight: 800; font-size: 0.85rem; color: var(--text-primary);">🏷️ Discounts & Privileges</label>
+            <span id="appliedDiscountBadge" style="font-size: 0.72rem; font-weight: 800; background: var(--bg-card); color: var(--text-muted); padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">None (0%)</span>
+          </div>
+
+          <div class="discount-chips-bar">
+            <button type="button" class="discount-chip-btn active" id="discBtnNone" onclick="app.setDiscount('none')">
+              None (0%)
+            </button>
+            <button type="button" class="discount-chip-btn" id="discBtnOwner" onclick="app.setDiscount('owner')">
+              👑 Owner's Meal (100% Comp)
+            </button>
+            <button type="button" class="discount-chip-btn" id="discBtnPwd" onclick="app.setDiscount('pwd')">
+              ♿ PWD (20%)
+            </button>
+            <button type="button" class="discount-chip-btn" id="discBtnSenior" onclick="app.setDiscount('senior')">
+              🧓 Senior (20%)
+            </button>
+            <button type="button" class="discount-chip-btn" id="discBtnPromo10" onclick="app.setDiscount('promo10')">
+              🏷️ 10% Promo
+            </button>
+            <button type="button" class="discount-chip-btn" id="discBtnCustom" onclick="app.setDiscount('custom')">
+              ✏️ Custom %
+            </button>
+          </div>
+
+          <!-- Owner's Meal / Comp Details (shown when Owner's Meal is selected) -->
+          <div id="ownerDetailsSection" style="display: none; margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px dashed var(--border-color);">
+            <div class="form-row-2">
+              <div class="form-group">
+                <label style="font-size: 0.75rem;">Authorized By</label>
+                <input type="text" id="ownerAuthInput" class="form-control" value="Store Owner" style="font-size: 0.85rem;" oninput="app.updateDiscountDetails()">
+              </div>
+              <div class="form-group">
+                <label style="font-size: 0.75rem;">Comp Purpose / Notes</label>
+                <input type="text" id="ownerReasonInput" class="form-control" placeholder="e.g. Owner consumption / Menu tasting" style="font-size: 0.85rem;" oninput="app.updateDiscountDetails()">
+              </div>
+            </div>
+            <small style="color: var(--matcha-dark); font-weight: 800; font-size: 0.75rem; display: block; margin-top: 0.35rem;">
+              👑 100% House Complimentary Order — Amount Due is ₱0.00 (Inventory deducted normally)
+            </small>
+          </div>
+
+          <!-- PWD / Senior ID & Details Input (shown when PWD or Senior is selected) -->
+          <div id="pwdDetailsSection" style="display: none; margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px dashed var(--border-color);">
+            <div class="form-row-2">
+              <div class="form-group">
+                <label id="pwdIdLabel" style="font-size: 0.75rem;">PWD ID Number *</label>
+                <input type="text" id="discountIdNumberInput" class="form-control" placeholder="e.g. PWD-NCR-2026-1049" style="font-size: 0.85rem;" oninput="app.updateDiscountDetails()">
+              </div>
+              <div class="form-group">
+                <label style="font-size: 0.75rem;">Cardholder Name</label>
+                <input type="text" id="discountHolderNameInput" class="form-control" placeholder="e.g. Aljune M." style="font-size: 0.85rem;" oninput="app.updateDiscountDetails()">
+              </div>
+            </div>
+            <small style="color: var(--matcha-dark); font-weight: 700; font-size: 0.72rem; display: block; margin-top: 0.3rem;">
+              ✓ 20% PWD Discount applied + VAT Exemption (RA 10754 / RA 9994)
+            </small>
+          </div>
+
+          <!-- Custom Percentage Input -->
+          <div id="customDiscountSection" style="display: none; margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px dashed var(--border-color);">
+            <div class="form-group">
+              <label style="font-size: 0.75rem;">Custom Discount Percentage (%)</label>
+              <input type="number" id="customDiscountPercentInput" class="form-control" placeholder="e.g. 15" min="1" max="100" style="font-size: 0.85rem;" oninput="app.updateCustomDiscount(this.value)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Mode Switcher (Single vs Split) -->
+        <div class="payment-mode-tabs">
+          <button type="button" class="payment-mode-tab active" id="singlePaymentModeBtn" onclick="app.setPaymentMode('single')">
+            <span>💳</span> Standard (Single Method)
+          </button>
+          <button type="button" class="payment-mode-tab" id="splitPaymentModeBtn" onclick="app.setPaymentMode('split')">
+            <span>⚡</span> Split Payment (Multi-Tender)
+          </button>
+        </div>
+
+        <!-- 1. SINGLE PAYMENT METHOD SECTION -->
+        <div id="singlePaymentSection">
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label>Select Payment Method</label>
+            <div class="payment-methods-grid" id="checkoutPaymentMethodsGrid">
+              <!-- Dynamic Payment Selection Cards -->
+            </div>
+          </div>
+
+          <!-- Digital Wallet Scan-to-Pay QR Box (GCash, Maya, UnionBank) -->
+          <div id="walletQrContainer" style="display: none; margin-bottom: 0.75rem;">
+            <!-- Rendered QR Box -->
+          </div>
+
+          <!-- Cash Tender & Change Calculator -->
+          <div id="cashTenderSection" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="form-group">
+              <label>Quick Cash Presets</label>
+              <div class="cash-quick-presets" id="cashPresetsContainer">
+                <!-- Quick Preset Chips -->
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Amount Tendered (₱)</label>
+              <input type="number" step="1" id="tenderAmountInput" class="form-control" style="font-size: 1.2rem; font-weight: 700; font-family: var(--font-mono);">
+            </div>
+
+            <div class="change-due-box">
+              <span class="change-label">Change Due:</span>
+              <span class="change-amount" id="modalChangeDueDisplay">₱0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. SPLIT PAYMENT METHOD SECTION (MULTI-TENDER) -->
+        <div id="splitPaymentSection" style="display: none; flex-direction: column; gap: 0.85rem;">
+          
+          <!-- Split Status & Remaining Balance Banner -->
+          <div class="split-remaining-banner" id="splitRemainingBanner">
+            <div class="split-banner-left">
+              <span class="split-banner-label">Remaining to Pay:</span>
+              <span class="split-remaining-val" id="splitRemainingAmountDisplay">₱0.00</span>
+            </div>
+            <div class="split-banner-right">
+              <span class="split-status-badge" id="splitStatusBadge">Unbalanced</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <label style="margin: 0;">Payment Split Allocation</label>
+              <button type="button" class="btn-action-outline" onclick="app.addSplitRow()" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+                + Add Method
+              </button>
+            </div>
+            
+            <div class="split-rows-container" id="splitRowsContainer">
+              <!-- Dynamic Split Payment Rows -->
+            </div>
+          </div>
+
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Guest Name / Table (Optional)</label>
+            <input type="text" id="checkoutCustomerName" class="form-control" placeholder="e.g. Walk-in, Table 2, Maria">
+          </div>
+          <div class="form-group">
+            <label>Order Notes / Sugar Level (Optional)</label>
+            <input type="text" id="checkoutOrderNotes" class="form-control" placeholder="e.g. 50% sugar, extra oat milk, less ice">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action-outline" onclick="app.closeModal('checkoutModal')">Cancel</button>
+        <button class="btn-primary" id="completeSaleSubmitBtn" onclick="app.completeCheckout()">
+          <span>✓</span> Complete Sale
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANDATORY MATCHA THERMAL RECEIPT PREVIEW MODAL -->
+  <div class="modal-overlay" id="receiptModal">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title">Official Receipt</div>
+        <button class="modal-close-btn" onclick="app.closeModal('receiptModal')">✕</button>
+      </div>
+      <div class="modal-body" style="background-color: var(--bg-app); padding: 1.25rem 0;">
+        <div id="receiptPaperContainer">
+          <!-- Rendered Thermal Receipt Paper -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action-outline" onclick="app.closeModal('receiptModal')">Done</button>
+        <button class="btn-primary" onclick="app.printReceipt()">
+          <span>🖨️</span> Print Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARKED ORDERS MODAL -->
+  <div class="modal-overlay" id="parkedModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Held / Parked Orders</div>
+        <button class="modal-close-btn" onclick="app.closeModal('parkedModal')">✕</button>
+      </div>
+      <div class="modal-body" id="parkedListContainer">
+        <!-- Parked orders list -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action-outline" onclick="app.closeModal('parkedModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT PRODUCT MODAL -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="productModalTitle">Add Menu Item</div>
+        <button class="modal-close-btn" onclick="app.closeModal('productModal')">✕</button>
+      </div>
+      <form id="productEditForm" onsubmit="app.saveProductForm(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Item Name *</label>
+            <input type="text" id="prodFormName" class="form-control" required placeholder="e.g. Level 3 Ultra Umami">
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>SKU / Code</label>
+              <input type="text" id="prodFormSku" class="form-control" placeholder="e.g. CLS-04">
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <select id="prodFormCategory" class="form-control">
+                <!-- Dynamic categories -->
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Selling Price (₱) *</label>
+              <input type="number" step="1" id="prodFormPrice" class="form-control" required placeholder="280">
+            </div>
+            <div class="form-group">
+              <label>Cost of Goods (₱)</label>
+              <input type="number" step="1" id="prodFormCost" class="form-control" placeholder="90">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Initial Stock Count</label>
+              <input type="number" id="prodFormStock" class="form-control" value="80">
+            </div>
+            <div class="form-group">
+              <label>Low Stock Alert Threshold</label>
+              <input type="number" id="prodFormLowAlert" class="form-control" value="15">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Description / Ingredients (as on menu)</label>
+            <input type="text" id="prodFormNotes" class="form-control" placeholder="e.g. Matcha latte topped with cream">
+          </div>
+
+          <div class="form-group">
+            <label>Color Accent Tag</label>
+            <input type="color" id="prodFormColor" value="#3A5A40" style="height: 38px; width: 100%; border: none; cursor: pointer; border-radius: var(--radius-sm);">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-action-outline" onclick="app.closeModal('productModal')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CATEGORIES MODAL -->
+  <div class="modal-overlay" id="categoriesModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Manage Product Categories</div>
+        <button class="modal-close-btn" onclick="app.closeModal('categoriesModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row-2" style="margin-bottom: 1rem;">
+          <div class="form-group">
+            <label>New Category Name</label>
+            <input type="text" id="newCategoryNameInput" class="form-control" placeholder="e.g. Seasonal Specials">
+          </div>
+          <div class="form-group">
+            <label>Emoji Icon</label>
+            <input type="text" id="newCategoryIconInput" class="form-control" placeholder="🍵" maxlength="2">
+          </div>
+        </div>
+        <button class="btn-primary" onclick="app.addCategory()" style="align-self: flex-start; margin-bottom: 1rem;">+ Add Category</button>
+
+        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">Existing Categories</label>
+        <div id="categoriesListContainer">
+          <!-- Existing Category List -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action-outline" onclick="app.closeModal('categoriesModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD PAYMENT METHOD MODAL -->
+  <div class="modal-overlay" id="paymentMethodModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Add Custom Payment Method</div>
+        <button class="modal-close-btn" onclick="app.closeModal('paymentMethodModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Live Preview Card -->
+        <div style="background: var(--bg-subtle); border: 1.5px dashed var(--border-color); border-radius: var(--radius-md); padding: 0.85rem; display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Preview on Register:</span>
+          <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-card); padding: 0.4rem 0.85rem; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color);">
+            <span id="pmPreviewIcon" style="font-size: 1.25rem;">📱</span>
+            <span id="pmPreviewName" style="font-weight: 800; font-size: 0.88rem; color: var(--text-primary);">Custom Method</span>
+            <span id="pmPreviewDot" style="width: 8px; height: 8px; border-radius: 50%; background: #3A5A40;"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Method Name *</label>
+          <input type="text" id="newPmNameInput" class="form-control" placeholder="e.g. BPI Transfer, Apple Pay, Foodpanda" oninput="app.updatePmPreview()">
+        </div>
+
+        <!-- Visual Icon Picker Palette -->
+        <div class="form-group">
+          <label>Select an Icon</label>
+          <div class="icon-picker-grid">
+            <button type="button" class="icon-chip selected" onclick="app.selectPresetIcon('📱')">📱</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('💵')">💵</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('💳')">💳</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('🟢')">🟢</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('🏦')">🏦</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('🍵')">🍵</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('🍏')">🍏</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('🅿️')">🅿️</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('🎁')">🎁</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('🎟️')">🎟️</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('🪙')">🪙</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('💎')">💎</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('💼')">💼</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('🧾')">🧾</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('🏷️')">🏷️</button>
+            <button type="button" class="icon-chip" onclick="app.selectPresetIcon('⚡')">⚡</button>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Custom Emoji / Symbol</label>
+            <input type="text" id="newPmIconInput" class="form-control" value="📱" placeholder="📱" maxlength="4" oninput="app.updatePmPreview()">
+          </div>
+          <div class="form-group">
+            <label>Badge Color Accent</label>
+            <input type="color" id="newPmColorInput" value="#3A5A40" style="height: 38px; width: 100%; border: none; cursor: pointer; border-radius: var(--radius-sm);" oninput="app.updatePmPreview()">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action-outline" onclick="app.closeModal('paymentMethodModal')">Cancel</button>
+        <button class="btn-primary" onclick="app.saveNewPaymentMethod()">Create Method</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT ORDER MODAL -->
+  <div class="modal-overlay" id="editOrderModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Edit Order <span id="editOrderIdDisplay"></span></div>
+        <button class="modal-close-btn" onclick="app.closeModal('editOrderModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Order Status</label>
+          <select id="editOrderStatusSelect" class="form-control">
+            <option value="completed">Completed</option>
+            <option value="refunded">Refunded (Restores Stock)</option>
+            <option value="voided">Voided (Restores Stock)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="editOrderPaymentSelect" class="form-control">
+            <!-- Dynamic payment methods -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Guest Identifier</label>
+          <input type="text" id="editOrderCustomerInput" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Order Notes / Customizations</label>
+          <textarea id="editOrderNotesInput" class="form-control" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action-outline" onclick="app.closeModal('editOrderModal')">Cancel</button>
+        <button class="btn-primary" onclick="app.saveOrderEdits()">Save Order Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- SCRIPTS -->
+  <script src="demo-data.js"></script>
+  <script src="analytics.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
